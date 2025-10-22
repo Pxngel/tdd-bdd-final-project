@@ -46,7 +46,19 @@ def step_impl(context):
     #
     # load the database with new products
     #
-    for row in context.table:
-        #
-        # ADD YOUR CODE HERE TO CREATE PRODUCTS VIA THE REST API
-        #
+     for row in context.table:
+        # Normalizadores
+        def to_bool(val: str) -> bool:
+            return str(val).strip().lower() in ("true", "1", "yes", "y", "t")
+
+        payload = {
+            "name": row["name"],
+            "description": row["description"],
+            "price": str(row["price"]).strip(),      # tu API acepta string/num; dejamos string
+            "available": to_bool(row["available"]),
+            "category": row["category"].strip(),     # debe ser: UNKNOWN, CLOTHS, FOOD, HOUSEWARES, AUTOMOTIVE, TOOLS
+        }
+
+        context.resp = requests.post(rest_endpoint, json=payload)
+        assert context.resp.status_code == HTTP_201_CREATED, f"Failed to create: {payload} -> {context.resp.text}"
+

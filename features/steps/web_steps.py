@@ -104,7 +104,48 @@ def step_impl(context, element_name):
 # to get the element id of any button
 ##################################################################
 
-## UPDATE CODE HERE ##
+##################################################################
+# Botones: id = '<texto en minúsculas>-btn'  (p.ej. "Clear" -> 'clear-btn')
+##################################################################
+@when('I press the "{button}" button')
+def step_impl(context, button):
+    button_id = button.lower() + "-btn"
+    elem = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.element_to_be_clickable((By.ID, button_id))
+    )
+    elem.click()
+
+##################################################################
+# Mensajes flash: id = 'flash_message'
+##################################################################
+@then('I should see the message "{message}"')
+def step_impl(context, message):
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element((By.ID, "flash_message"), message)
+    )
+    assert found
+
+##################################################################
+# Resultados de búsqueda: contenedor con id = 'search_results'
+##################################################################
+@then('I should see "{text}" in the results')
+def step_impl(context, text):
+    table = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.presence_of_element_located((By.ID, "search_results"))
+    )
+    rows = table.find_elements(By.TAG_NAME, "tr")
+    found = any(text in row.text for row in rows)
+    assert found, f'"{text}" not found in results: {[row.text for row in rows]}'
+
+@then('I should not see "{text}" in the results')
+def step_impl(context, text):
+    table = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.presence_of_element_located((By.ID, "search_results"))
+    )
+    rows = table.find_elements(By.TAG_NAME, "tr")
+    found = any(text in row.text for row in rows)
+    assert not found, f'Unexpectedly found "{text}" in results: {[row.text for row in rows]}'
+
 
 ##################################################################
 # This code works because of the following naming convention:

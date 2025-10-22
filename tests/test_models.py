@@ -104,3 +104,126 @@ class TestProductModel(unittest.TestCase):
     #
     # ADD YOUR TEST CASES HERE
     #
+
+    def test_read_a_product(self):
+        """It should Read a product by ID and verify fields"""
+        product = ProductFactory()
+        app.logger.debug("Test Read - product before create: %r", product)
+        product.id = None
+        product.create()
+        self.assertIsNotNone(product.id)
+
+        # Fetch back from DB
+        found = Product.find(product.id)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.id, product.id)
+        self.assertEqual(found.name, product.name)
+        self.assertEqual(found.description, product.description)
+        self.assertEqual(found.available, product.available)
+        self.assertEqual(found.category, product.category)
+        # price stored as Numeric -> compare as Decimal
+        self.assertEqual(Decimal(found.price), product.price)
+
+    def test_update_a_product(self):
+        """It should Update a product and persist changes"""
+        product = ProductFactory()
+        app.logger.debug("Test Update - product before create: %r", product)
+        product.id = None
+        product.create()
+        app.logger.debug("Test Update - product after create: %r", product)
+
+        # Update one field
+        original_id = product.id
+        new_description = "Updated description"
+        product.description = new_description
+        product.update()
+
+        # There should still be exactly one product
+        products = Product.all()
+        self.assertEqual(len(products), 1)
+
+        # Reload and verify update persisted with same ID
+        updated = Product.find(original_id)
+        self.assertIsNotNone(updated)
+        self.assertEqual(updated.id, original_id)
+        self.assertEqual(updated.description, new_description)
+
+    def test_delete_a_product(self):
+        """It should Delete a product"""
+        product = ProductFactory()
+        product.id = None
+        product.create()
+        self.assertEqual(len(Product.all()), 1)
+
+        # Delete and verify gone
+        product.delete()
+        self.assertEqual(Product.all(), [])
+
+    def test_list_all_products(self):
+        """It should List all products"""
+        products = Product.all()
+        self.assertEqual(len(products), 0)
+
+        # create 5
+        for _ in range(5):
+            p = ProductFactory()
+            p.id = None
+            p.create()
+
+        products = Product.all()
+        self.assertEqual(len(products), 5)
+
+    def test_find_by_name(self):
+        """It should Find products by name"""
+        created = []
+        for _ in range(5):
+            p = ProductFactory()
+            p.id = None
+            p.create()
+            created.append(p)
+
+        target_name = created[0].name
+        expected_count = sum(1 for p in created if p.name == target_name)
+
+        query = Product.find_by_name(target_name)
+        # Flask-SQLAlchemy query supports .all() / iteration / count()
+        found = list(query)
+        self.assertEqual(len(found), expected_count)
+        for p in found:
+            self.assertEqual(p.name, target_name)
+
+    def test_find_by_category(self):
+        """It should Find products by category"""
+        created = []
+        for _ in range(10):
+            p = ProductFactory()
+            p.id = None
+            p.create()
+            created.append(p)
+
+        target_category = created[0].category
+        expected_count = sum(1 for p in created if p.category == target_category)
+
+        query = Product.find_by_category(target_category)
+        found = list(query)
+        self.assertEqual(len(found), expected_count)
+        for p in found:
+            self.assertEqual(p.category, target_category)
+
+    def test_find_by_availability(self):
+        """It should Find products by availability"""
+        created = []
+        for _ in range(10):
+            p = ProductFactory()
+            p.id = None
+            p.create()
+            created.append(p)
+
+        target_available = created[0].available
+        expected_count = sum(1 for p in created if p.available == target_available)
+
+        query = Product.find_by_availability(target_available)
+        found = list(query)
+        self.assertEqual(len(found), expected_count)
+        for p in found:
+            self.assertEqual(p.available, target_available)
